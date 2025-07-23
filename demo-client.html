@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NestJS Monorepo Demo Client</title>
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .section { margin: 20px 0; padding: 20px; border: 1px solid #ddd; border-radius: 5px; }
+        button { margin: 5px; padding: 10px 15px; background: #007bff; color: white; border: none; border-radius: 3px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        input, textarea { width: 100%; padding: 8px; margin: 5px 0; border: 1px solid #ddd; border-radius: 3px; }
+        .result { background: #f8f9fa; padding: 10px; margin: 10px 0; border-radius: 3px; white-space: pre-wrap; }
+        .notification { background: #d4edda; border: 1px solid #c3e6cb; color: #155724; padding: 10px; margin: 5px 0; border-radius: 3px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>NestJS Monorepo Demo Client</h1>
+        
+        <!-- Authentication Section -->
+        <div class="section">
+            <h2>Authentication (IAM Service - Port 3001)</h2>
+            <div>
+                <h3>Register</h3>
+                <input type="text" id="regUsername" placeholder="Username" value="testuser">
+                <input type="password" id="regPassword" placeholder="Password" value="password123">
+                <button onclick="register()">Register</button>
+            </div>
+            <div>
+                <h3>Login</h3>
+                <input type="text" id="loginUsername" placeholder="Username" value="testuser">
+                <input type="password" id="loginPassword" placeholder="Password" value="password123">
+                <button onclick="login()">Login</button>
+            </div>
+            <div>
+                <strong>JWT Token:</strong>
+                <input type="text" id="jwtToken" placeholder="JWT Token will appear here" readonly>
+            </div>
+        </div>
+
+        <!-- BPM Section -->
+        <div class="section">
+            <h2>BPM Service (Port 3002)</h2>
+            <button onclick="getAccounts()">Get Accounts</button>
+            <button onclick="getTransactions()">Get Transactions</button>
+            <div>
+                <h3>Create Transaction</h3>
+                <input type="number" id="amount" placeholder="Amount" value="100" step="0.01" min="0.01">
+                <select id="transactionType">
+                    <option value="income">Income</option>
+                    <option value="expense">Expense</option>
+                </select>
+                <input type="text" id="description" placeholder="Description (optional)" value="Test transaction">
+                <button onclick="createTransaction()">Create Transaction</button>
+            </div>
+        </div>
+
+        <!-- LGM Section -->
+        <div class="section">
+            <h2>LGM Service (Port 3003)</h2>
+            <button onclick="getLogs()">Get Logs</button>
+        </div>
+
+        <!-- WebSocket Section -->
+        <div class="section">
+            <h2>WebSocket Notifications (NSM Service - Port 3004)</h2>
+            <button onclick="connectWebSocket()">Connect WebSocket</button>
+            <button onclick="disconnectWebSocket()">Disconnect</button>
+            <button onclick="requestNotifications()">Get Notifications</button>
+            <div id="wsStatus">Status: Disconnected</div>
+            <div id="notifications"></div>
+        </div>
+
+        <!-- Results Section -->
+        <div class="section">
+            <h2>Results</h2>
+            <div id="results" class="result">Results will appear here...</div>
+        </div>
+    </div>
+
+    <script>
+        let socket = null;
+        let currentToken = '';
+
+        function log(message) {
+            const results = document.getElementById('results');
+            results.textContent = new Date().toLocaleTimeString() + ': ' + message + '\n' + results.textContent;
+        }
+
+        function addNotification(notification) {
+            const notifications = document.getElementById('notifications');
+            const notifDiv = document.createElement('div');
+            notifDiv.className = 'notification';
+            notifDiv.textContent = `${notification.type}: ${notification.message} (${new Date(notification.createdAt).toLocaleString()})`;
+            notifications.insertBefore(notifDiv, notifications.firstChild);
+        }
+
+        async function register() {
+            const username = document.getElementById('regUsername').value;
+            const password = document.getElementById('regPassword').value;
+            
+            try {
+                const response = await fetch('http://localhost:3001/auth/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+                const result = await response.json();
+                log('Register: ' + JSON.stringify(result, null, 2));
+            } catch (error) {
+                log('Register Error: ' + error.message);
+            }
+        }
+
+        async function login() {
+            const username = document.getElementById('loginUsername').value;
+            const password = document.getElementById('loginPassword').value;
+            
+            try {
+                const response = await fetch('http://localhost:3001/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+                const result = await response.json();
+                if (result.accessToken) {
+                    currentToken = result.accessToken;
+                    document.getElementById('jwtToken').value = currentToken;
+                    log('Login successful!');
+                } else {
+                    log('Login: ' + JSON.stringify(result, null, 2));
+                }
+            } catch (error) {
+                log('Login Error: ' + error.message);
+            }
+        }
+
+        async function getAccounts() {
+            if (!currentToken) {
+                log('Please login first!');
+                return;
+            }
+            
+            try {
+                const response = await fetch('http://localhost:3002/accounts', {
+                    headers: { 'Authorization': 'Bearer ' + currentToken }
+                });
+                const result = await response.json();
+                log('Accounts: ' + JSON.stringify(result, null, 2));
+            } catch (error) {
+                log('Get Accounts Error: ' + error.message);
+            }
+        }
+
+        async function getTransactions() {
+            if (!currentToken) {
+                log('Please login first!');
+                return;
+            }
+            
+            try {
+                const response = await fetch('http://localhost:3002/transactions', {
+                    headers: { 'Authorization': 'Bearer ' + currentToken }
+                });
+                const result = await response.json();
+                log('Transactions: ' + JSON.stringify(result, null, 2));
+            } catch (error) {
+                log('Get Transactions Error: ' + error.message);
+            }
+        }
+
+        async function createTransaction() {
+            if (!currentToken) {
+                log('Please login first!');
+                return;
+            }
+            
+            const amount = parseFloat(document.getElementById('amount').value);
+            const type = document.getElementById('transactionType').value;
+            const description = document.getElementById('description').value;
+            
+            try {
+                const response = await fetch('http://localhost:3002/transactions', {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + currentToken 
+                    },
+                    body: JSON.stringify({ amount, type, description })
+                });
+                const result = await response.json();
+                log('Create Transaction: ' + JSON.stringify(result, null, 2));
+            } catch (error) {
+                log('Create Transaction Error: ' + error.message);
+            }
+        }
+
+        async function getLogs() {
+            if (!currentToken) {
+                log('Please login first!');
+                return;
+            }
+            
+            try {
+                const response = await fetch('http://localhost:3003/logs', {
+                    headers: { 'Authorization': 'Bearer ' + currentToken }
+                });
+                const result = await response.json();
+                log('Logs: ' + JSON.stringify(result, null, 2));
+            } catch (error) {
+                log('Get Logs Error: ' + error.message);
+            }
+        }
+
+        function connectWebSocket() {
+            if (!currentToken) {
+                log('Please login first!');
+                return;
+            }
+
+            if (socket) {
+                socket.disconnect();
+            }
+
+            socket = io('http://localhost:3004', {
+                auth: { token: currentToken }
+            });
+
+            socket.on('connect', () => {
+                document.getElementById('wsStatus').textContent = 'Status: Connected';
+                log('WebSocket connected');
+            });
+
+            socket.on('disconnect', () => {
+                document.getElementById('wsStatus').textContent = 'Status: Disconnected';
+                log('WebSocket disconnected');
+            });
+
+            socket.on('notification', (notification) => {
+                log('Received notification: ' + JSON.stringify(notification, null, 2));
+                addNotification(notification);
+            });
+
+            socket.on('notifications', (notifications) => {
+                log('All notifications: ' + JSON.stringify(notifications, null, 2));
+                notifications.forEach(addNotification);
+            });
+
+            socket.on('connect_error', (error) => {
+                log('WebSocket connection error: ' + error.message);
+            });
+        }
+
+        function disconnectWebSocket() {
+            if (socket) {
+                socket.disconnect();
+                socket = null;
+                document.getElementById('wsStatus').textContent = 'Status: Disconnected';
+                log('WebSocket disconnected manually');
+            }
+        }
+
+        function requestNotifications() {
+            if (socket && socket.connected) {
+                socket.emit('getNotifications');
+                log('Requested notifications from server');
+            } else {
+                log('WebSocket not connected');
+            }
+        }
+    </script>
+</body>
+</html>
