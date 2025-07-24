@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NestJS Monorepo - API Documentation Hub</title>
+    <style>
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            margin: 0; 
+            padding: 20px; 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container { 
+            max-width: 1200px; 
+            margin: 0 auto; 
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+            color: white;
+            padding: 40px;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 3em;
+            font-weight: 300;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        .header p {
+            margin: 10px 0 0 0;
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+        .services {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            padding: 40px;
+        }
+        .service-card {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 30px;
+            text-align: center;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+        .service-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+            border-color: #4ecdc4;
+        }
+        .service-icon {
+            font-size: 3em;
+            margin-bottom: 20px;
+        }
+        .service-title {
+            font-size: 1.5em;
+            font-weight: bold;
+            margin: 15px 0;
+            color: #333;
+        }
+        .service-description {
+            color: #666;
+            margin: 15px 0;
+            line-height: 1.6;
+        }
+        .service-links {
+            margin-top: 20px;
+        }
+        .btn {
+            display: inline-block;
+            padding: 12px 25px;
+            margin: 5px;
+            text-decoration: none;
+            border-radius: 25px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            font-size: 0.9em;
+            letter-spacing: 1px;
+        }
+        .btn-docs {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+        }
+        .btn-docs:hover {
+            background: linear-gradient(45deg, #764ba2, #667eea);
+            transform: scale(1.05);
+        }
+        .btn-demo {
+            background: linear-gradient(45deg, #ff6b6b, #ee5a24);
+            color: white;
+        }
+        .btn-demo:hover {
+            background: linear-gradient(45deg, #ee5a24, #ff6b6b);
+            transform: scale(1.05);
+        }
+        .status {
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.8em;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .status-online {
+            background: #2ecc71;
+            color: white;
+        }
+        .status-websocket {
+            background: #9b59b6;
+            color: white;
+        }
+        .footer {
+            background: #2c3e50;
+            color: white;
+            text-align: center;
+            padding: 30px;
+            margin-top: 40px;
+        }
+        .architecture {
+            background: #ecf0f1;
+            padding: 30px;
+            margin: 20px 0;
+        }
+        .architecture h3 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .tech-stack {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        .tech-badge {
+            background: #3498db;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚀 NestJS Monorepo</h1>
+            <p>Microservices Architecture with RabbitMQ & MongoDB</p>
+        </div>
+
+        <div class="architecture">
+            <h3>🏗️ Technology Stack</h3>
+            <div class="tech-stack">
+                <span class="tech-badge">NestJS</span>
+                <span class="tech-badge">TypeScript</span>
+                <span class="tech-badge">RabbitMQ</span>
+                <span class="tech-badge">MongoDB</span>
+                <span class="tech-badge">JWT Auth</span>
+                <span class="tech-badge">WebSocket</span>
+                <span class="tech-badge">Swagger</span>
+                <span class="tech-badge">Docker</span>
+            </div>
+        </div>
+
+        <div class="services">
+            <!-- IAM Service -->
+            <div class="service-card">
+                <div class="service-icon">🔐</div>
+                <div class="service-title">IAM Service</div>
+                <div class="status status-online">Port 3001</div>
+                <div class="service-description">
+                    Identity & Access Management service handling user authentication, 
+                    registration, and JWT token generation.
+                </div>
+                <div class="service-links">
+                    <a href="http://localhost:3001/api/docs" class="btn btn-docs" target="_blank">
+                        📚 API Docs
+                    </a>
+                </div>
+            </div>
+
+            <!-- BPM Service -->
+            <div class="service-card">
+                <div class="service-icon">💼</div>
+                <div class="service-title">BPM Service</div>
+                <div class="status status-online">Port 3002</div>
+                <div class="service-description">
+                    Business Process Management service for handling accounts, 
+                    transactions, and financial operations.
+                </div>
+                <div class="service-links">
+                    <a href="http://localhost:3002/api/docs" class="btn btn-docs" target="_blank">
+                        📚 API Docs
+                    </a>
+                </div>
+            </div>
+
+            <!-- LGM Service -->
+            <div class="service-card">
+                <div class="service-icon">📊</div>
+                <div class="service-title">LGM Service</div>
+                <div class="status status-online">Port 3003</div>
+                <div class="service-description">
+                    Log Management service providing centralized logging and 
+                    monitoring for all microservices activities.
+                </div>
+                <div class="service-links">
+                    <a href="http://localhost:3003/api/docs" class="btn btn-docs" target="_blank">
+                        📚 API Docs
+                    </a>
+                </div>
+            </div>
+
+            <!-- NSM Service -->
+            <div class="service-card">
+                <div class="service-icon">🔔</div>
+                <div class="service-title">NSM Service</div>
+                <div class="status status-websocket">Port 3004</div>
+                <div class="service-description">
+                    Notification Service Management with real-time WebSocket 
+                    connections for instant notifications.
+                </div>
+                <div class="service-links">
+                    <a href="http://localhost:3004/api/docs" class="btn btn-docs" target="_blank">
+                        📚 API Docs
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Demo Client -->
+        <div style="text-align: center; padding: 20px; background: #f8f9fa; margin: 20px;">
+            <h3>🧪 Interactive Demo Client</h3>
+            <p>Test all services with our interactive demo client</p>
+            <a href="demo-client.html" class="btn btn-demo" target="_blank">
+                🚀 Launch Demo Client
+            </a>
+        </div>
+
+        <div class="footer">
+            <p><strong>🎉 All Services Ready!</strong></p>
+            <p>Complete microservices architecture with Swagger documentation</p>
+            <p style="opacity: 0.7; margin-top: 15px;">
+                Built with ❤️ using NestJS, RabbitMQ, MongoDB, and modern TypeScript
+            </p>
+        </div>
+    </div>
+
+    <script>
+        // Simple health check for services
+        async function checkServiceHealth() {
+            const services = [
+                { name: 'IAM', port: 3001 },
+                { name: 'BPM', port: 3002 },
+                { name: 'LGM', port: 3003 },
+                { name: 'NSM', port: 3004 }
+            ];
+
+            for (const service of services) {
+                try {
+                    const response = await fetch(`http://localhost:${service.port}`, { 
+                        mode: 'no-cors' 
+                    });
+                    console.log(`✅ ${service.name} service is healthy`);
+                } catch (error) {
+                    console.log(`❌ ${service.name} service may be down`);
+                }
+            }
+        }
+
+        // Check health on page load
+        window.addEventListener('load', checkServiceHealth);
+    </script>
+</body>
+</html>
