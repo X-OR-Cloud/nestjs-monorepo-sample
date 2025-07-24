@@ -1,17 +1,39 @@
-import { BaseEntity } from '../../../../../libs/shared/src/entities';
+import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
+import { Document } from 'mongoose';
 
-export class Transaction extends BaseEntity {
+@Schema({ 
+  collection: 'transactions',
+  timestamps: true 
+})
+export class Transaction extends Document {
+  @Prop({ required: true, type: Number })
   amount: number;
+
+  @Prop({ required: true, enum: ['expense', 'income'] })
   type: 'expense' | 'income';
+
+  @Prop({ type: String })
   description?: string;
 
-  constructor(partial: Partial<Transaction>) {
-    super(partial);
-    Object.assign(this, partial);
-    
-    // Set transaction-specific metadata
-    this.setMetadata('transactionType', this.type);
-    this.setMetadata('transactionAmount', this.amount);
+  @Prop({ type: String, required: true })
+  userId: string; // Who created this transaction
+
+  @Prop({ default: true })
+  isActive: boolean;
+
+  @Prop({ type: Date, default: null })
+  deletedAt?: Date;
+
+  @Prop({ type: Object, default: {} })
+  metadata: { [key: string]: any };
+
+  // Virtual methods
+  isDeleted(): boolean {
+    return !!this.deletedAt;
+  }
+
+  markAsDeleted(): void {
+    this.deletedAt = new Date();
   }
 
   // Business methods
@@ -26,4 +48,16 @@ export class Transaction extends BaseEntity {
   isExpense(): boolean {
     return this.type === 'expense';
   }
+
+  setTransactionMetadata(key: string, value: any): void {
+    if (!this.metadata) this.metadata = {};
+    this.metadata[key] = value;
+    this.markModified('metadata');
+  }
+
+  getTransactionMetadata(key: string): any {
+    return this.metadata?.[key];
+  }
 }
+
+export const TransactionSchema = SchemaFactory.createForClass(Transaction);

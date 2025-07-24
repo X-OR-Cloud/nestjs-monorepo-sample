@@ -1,6 +1,7 @@
 import { Controller, Post, Body, ValidationPipe, UseGuards, Get } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiBearerAuth } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
+import { UserService } from '../user/user.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { LoginResponse } from './interfaces/login-response.interface';
@@ -9,7 +10,10 @@ import { JwtAuthGuard, CurrentUser } from '../../../../libs/shared/src/auth';
 @ApiTags('auth')
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly userService: UserService,
+  ) {}
 
   @Post('register')
   @ApiOperation({ 
@@ -92,5 +96,35 @@ export class AuthController {
   })
   getProfile(@CurrentUser() user: any) {
     return user;
+  }
+
+  @Get('users')
+  @ApiOperation({ 
+    summary: 'List all users (Debug endpoint)',
+    description: 'Returns all users in the database for debugging purposes'
+  })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'List of all users',
+    schema: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          _id: { type: 'string', example: '607d2f9e8b8b8b001f5e4d5a' },
+          username: { type: 'string', example: 'testuser' },
+          email: { type: 'string', example: 'testuser@example.com' },
+          isActive: { type: 'boolean', example: true },
+          createdAt: { type: 'string', example: '2024-07-24T09:56:54.123Z' },
+          updatedAt: { type: 'string', example: '2024-07-24T09:56:54.123Z' },
+          metadata: { type: 'object', example: { lastLoginAt: '2024-07-24T09:56:54.123Z', loginCount: 1 } }
+        }
+      }
+    }
+  })
+  async getAllUsers() {
+    // Simple find all users (excluding password field)
+    const users = await this.userService['userModel'].find().select('-password').exec();
+    return users;
   }
 }

@@ -27,12 +27,12 @@ export class AuthService {
     
     // Emit local events
     const userRegisterEvent: UserRegisterEvent = {
-      userId: user.id,
+      userId: user.id.toString(),
       username: user.username,
     };
     
     const userActionEvent: UserActionEvent = {
-      userId: user.id,
+      userId: user.id.toString(),
       service: 'iam',
       action: 'register',
       time: new Date(),
@@ -46,10 +46,10 @@ export class AuthService {
       eventType: 'user.registered',
       source: 'iam',
       data: {
-        userId: user.id,
+        userId: user.id.toString(),
         username: user.username,
-        email: `${user.username}@example.com`,
-        orgId: user.owner?.orgId || 'default-org',
+        email: user.email || `${user.username}@example.com`,
+        orgId: 'default-org', // Fixed: removed user.owner?.orgId
       },
       timestamp: new Date(),
     };
@@ -72,22 +72,24 @@ export class AuthService {
 
     // Enhanced JWT payload with more user info
     const payload = { 
-      sub: user.id, 
+      sub: user.id.toString(), 
       username: user.username,
-      orgId: user.owner.orgId,
+      orgId: 'default-org', // Fixed: removed user.owner.orgId
       iat: Math.floor(Date.now() / 1000),
     };
     
     const accessToken = this.jwtService.sign(payload);
 
-    // Update user metadata
-    user.setMetadata('lastLoginAt', new Date());
-    user.setMetadata('loginCount', (user.getMetadata('loginCount') || 0) + 1);
-    user.markAsChanged();
+    // Update user metadata using Mongoose methods
+    if (!user.metadata) user.metadata = {};
+    user.metadata.lastLoginAt = new Date();
+    user.metadata.loginCount = (user.metadata.loginCount || 0) + 1;
+    user.markModified('metadata');
+    await user.save(); // Save to database
 
     // Emit user action event
     const userActionEvent: UserActionEvent = {
-      userId: user.id,
+      userId: user.id.toString(),
       service: 'iam',
       action: 'login',
       time: new Date(),
@@ -101,9 +103,9 @@ export class AuthService {
     const user = await this.userService.findById(userId);
     if (user && !user.isDeleted()) {
       return {
-        userId: user.id,
+        userId: user.id || user.id,
         username: user.username,
-        orgId: user.owner.orgId,
+        orgId: 'default-org', // Fixed: removed user.owner.orgId
       };
     }
     return null;

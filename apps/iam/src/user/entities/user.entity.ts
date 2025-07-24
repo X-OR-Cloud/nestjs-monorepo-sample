@@ -1,8 +1,11 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { BaseEntity } from '../../../../../libs/shared/src/entities';
+import { Document } from 'mongoose';
 
-@Schema({ collection: 'users' })
-export class User extends BaseEntity {
+@Schema({ 
+  collection: 'users',
+  timestamps: true 
+})
+export class User extends Document {
   @Prop({ required: true, unique: true })
   username: string;
 
@@ -15,9 +18,33 @@ export class User extends BaseEntity {
   @Prop({ default: true })
   isActive: boolean;
 
-  constructor(partial: Partial<User>) {
-    super(partial);
-    Object.assign(this, partial);
+  @Prop({ type: Date, default: null })
+  deletedAt?: Date;
+
+  @Prop({ type: Object, default: {} })
+  metadata: { [key: string]: any };
+
+  // Virtual methods
+  isDeleted(): boolean {
+    return !!this.deletedAt;
+  }
+
+  markAsDeleted(): void {
+    this.deletedAt = new Date();
+  }
+
+  markAsChanged(): void {
+    // Mongoose handles this automatically with timestamps
+  }
+
+  setMetadata(key: string, value: any): void {
+    if (!this.metadata) this.metadata = {};
+    this.metadata[key] = value;
+    this.markModified('metadata');
+  }
+
+  getMetadata(key: string): any {
+    return this.metadata?.[key];
   }
 }
 

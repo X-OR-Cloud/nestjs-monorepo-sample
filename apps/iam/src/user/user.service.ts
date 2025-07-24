@@ -1,35 +1,40 @@
 import { Injectable } from '@nestjs/common';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
 import { User } from './entities/user.entity';
 import * as bcrypt from 'bcryptjs';
 
 @Injectable()
 export class UserService {
-  private users: User[] = [];
+  constructor(
+    @InjectModel(User.name) private userModel: Model<User>,
+  ) {}
 
   async create(username: string, password: string, orgId?: string): Promise<User> {
     const hashedPassword = await bcrypt.hash(password, 10);
-    const user = new User({
+    const user = new this.userModel({
       username,
+      email: `${username}@example.com`,
       password: hashedPassword,
-      owner: {
-        userId: '', // Will be set after creation
-        orgId: orgId || 'default-org',
-      },
     });
     
-    // Set the userId to self-reference for users
-    user.owner.userId = user.id;
-    
-    this.users.push(user);
-    return user;
+    return await user.save();
   }
 
   async findByUsername(username: string): Promise<User | undefined> {
-    return this.users.find(user => user.username === username && !user.isDeleted());
+    const user = await this.userModel.findOne({ 
+      username, 
+      deletedAt: null 
+    }).exec();
+    return user || undefined;
   }
 
   async findById(userId: string): Promise<User | undefined> {
-    return this.users.find(user => user.id === userId && !user.isDeleted());
+    const user = await this.userModel.findOne({ 
+      _id: userId, 
+      deletedAt: null 
+    }).exec();
+    return user || undefined;
   }
 
   async validatePassword(password: string, hashedPassword: string): Promise<boolean> {
@@ -37,21 +42,20 @@ export class UserService {
   }
 
   async updateUser(userId: string, updates: Partial<User>): Promise<User | undefined> {
-    const user = await this.findById(userId);
-    if (user) {
-      Object.assign(user, updates);
-      user.markAsChanged();
-      return user;
-    }
-    return undefined;
+    const user = await this.userModel.findByIdAndUpdate(
+      userId, 
+      { ...updates, updatedAt: new Date() }, 
+      { new: true }
+    ).exec();
+    return user || undefined;
   }
 
   async deleteUser(userId: string): Promise<boolean> {
-    const user = await this.findById(userId);
-    if (user) {
-      user.markAsDeleted();
-      return true;
-    }
-    return false;
+    const result = await this.userModel.findByIdAndUpdate(
+      userId, 
+      { deletedAt: new Date() }, 
+      { new: true }
+    ).exec();
+    return !!result;
   }
 }

@@ -1,4 +1,6 @@
 import { Injectable } from '@nestjs/common';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
 import { EventEmitter2, OnEvent } from '@nestjs/event-emitter';
 import { Transaction } from './entities/transaction.entity';
 import { CreateTransactionDto } from './dto/create-transaction.dto';
@@ -7,31 +9,29 @@ import { TransactionCreateEvent, UserActionEvent, NotificationEvent } from '../.
 
 @Injectable()
 export class TransactionService {
-  private transactions: Transaction[] = [];
-
   constructor(
+    @InjectModel(Transaction.name) private transactionModel: Model<Transaction>,
     private accountService: AccountService,
     private eventEmitter: EventEmitter2,
   ) {}
 
   async create(userId: string, createTransactionDto: CreateTransactionDto): Promise<Transaction> {
-    const transaction = new Transaction({
+    const transaction = new this.transactionModel({
       amount: createTransactionDto.amount,
       type: createTransactionDto.type,
       description: createTransactionDto.description,
-      owner: {
-        userId,
-        orgId: 'default-org',
-      },
+      userId,
     });
 
-    // Set transaction-specific attributes
-    transaction.setAttribute('category', createTransactionDto.type);
-    transaction.setAttribute('source', 'api');
-    transaction.setMetadata('originalAmount', createTransactionDto.amount);
-    transaction.setMetadata('currency', 'USD');
+    // Set transaction-specific metadata using direct assignment
+    if (!transaction.metadata) transaction.metadata = {};
+    transaction.metadata.originalAmount = createTransactionDto.amount;
+    transaction.metadata.currency = 'USD';
+    transaction.metadata.category = createTransactionDto.type;
+    transaction.metadata.source = 'api';
+    transaction.markModified('metadata');
 
-    this.transactions.push(transaction);
+    const savedTransaction = await transaction.save();
 
     // Update account balance
     await this.accountService.updateBalance(userId, createTransactionDto.amount, createTransactionDto.type);
@@ -39,9 +39,9 @@ export class TransactionService {
     // Emit events
     const transactionCreateEvent: TransactionCreateEvent = {
       userId,
-      transactionId: transaction.id,
-      amount: transaction.amount,
-      type: transaction.type,
+      transactionId: savedTransaction.id,
+      amount: savedTransaction.amount,
+      type: savedTransaction.type,
     };
 
     const userActionEvent: UserActionEvent = {
@@ -53,7 +53,7 @@ export class TransactionService {
 
     const notificationEvent: NotificationEvent = {
       userId,
-      message: `New ${transaction.type} transaction of $${transaction.amount} created`,
+      message: `New ${savedTransaction.type} transaction of $${savedTransaction.amount} created`,
       type: 'transaction',
     };
 
@@ -61,39 +61,43 @@ export class TransactionService {
     this.eventEmitter.emit('user-event', userActionEvent);
     this.eventEmitter.emit('notification', notificationEvent);
 
-    return transaction;
+    return savedTransaction;
   }
 
   async findByUserId(userId: string): Promise<Transaction[]> {
-    return this.transactions.filter(transaction => 
-      transaction.owner.userId === userId && !transaction.isDeleted()
-    );
+    return await this.transactionModel.find({ 
+      userId, 
+      deletedAt: null 
+    }).exec();
   }
 
   async findByUserIdAndOrgId(userId: string, orgId: string): Promise<Transaction[]> {
-    return this.transactions.filter(transaction => 
-      transaction.owner.userId === userId && 
-      transaction.owner.orgId === orgId && 
-      !transaction.isDeleted()
-    );
+    return await this.transactionModel.find({ 
+      userId, 
+      deletedAt: null 
+    }).exec();
   }
 
   async findAll(): Promise<Transaction[]> {
-    return this.transactions.filter(transaction => !transaction.isDeleted());
+    return await this.transactionModel.find({ 
+      deletedAt: null 
+    }).exec();
   }
 
   async findById(transactionId: string): Promise<Transaction | undefined> {
-    return this.transactions.find(transaction => 
-      transaction.id === transactionId && !transaction.isDeleted()
-    );
+    const transaction = await this.transactionModel.findOne({ 
+      _id: transactionId, 
+      deletedAt: null 
+    }).exec();
+    return transaction || undefined;
   }
 
   async getTransactionsByType(userId: string, type: 'expense' | 'income'): Promise<Transaction[]> {
-    return this.transactions.filter(transaction => 
-      transaction.owner.userId === userId && 
-      transaction.type === type && 
-      !transaction.isDeleted()
-    );
+    return await this.transactionModel.find({ 
+      userId, 
+      type, 
+      deletedAt: null 
+    }).exec();
   }
 
   async getTotalByType(userId: string, type: 'expense' | 'income'): Promise<number> {
@@ -109,8 +113,11 @@ export class TransactionService {
     // Update metadata for the transaction
     const transaction = await this.findById(event.transactionId);
     if (transaction) {
-      transaction.setMetadata('eventProcessed', true);
-      transaction.setMetadata('eventProcessedAt', new Date());
+      if (!transaction.metadata) transaction.metadata = {};
+      transaction.metadata.eventProcessed = true;
+      transaction.metadata.eventProcessedAt = new Date();
+      transaction.markModified('metadata');
+      await transaction.save();
     }
   }
 }
