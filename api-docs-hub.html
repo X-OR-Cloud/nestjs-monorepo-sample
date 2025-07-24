@@ -184,7 +184,7 @@
                     registration, and JWT token generation.
                 </div>
                 <div class="service-links">
-                    <a href="http://localhost:3001/api/docs" class="btn btn-docs" target="_blank">
+                    <a href="http://103.252.73.254:3001/api/docs" class="btn btn-docs" target="_blank">
                         📚 API Docs
                     </a>
                 </div>
@@ -200,7 +200,7 @@
                     transactions, and financial operations.
                 </div>
                 <div class="service-links">
-                    <a href="http://localhost:3002/api/docs" class="btn btn-docs" target="_blank">
+                    <a href="http://103.252.73.254:3002/api/docs" class="btn btn-docs" target="_blank">
                         📚 API Docs
                     </a>
                 </div>
@@ -216,7 +216,7 @@
                     monitoring for all microservices activities.
                 </div>
                 <div class="service-links">
-                    <a href="http://localhost:3003/api/docs" class="btn btn-docs" target="_blank">
+                    <a href="http://103.252.73.254:3003/api/docs" class="btn btn-docs" target="_blank">
                         📚 API Docs
                     </a>
                 </div>
@@ -232,7 +232,7 @@
                     connections for instant notifications.
                 </div>
                 <div class="service-links">
-                    <a href="http://localhost:3004/api/docs" class="btn btn-docs" target="_blank">
+                    <a href="http://103.252.73.254:3004/api/docs" class="btn btn-docs" target="_blank">
                         📚 API Docs
                     </a>
                 </div>
@@ -269,7 +269,7 @@
 
             for (const service of services) {
                 try {
-                    const response = await fetch(`http://localhost:${service.port}`, { 
+                    const response = await fetch(`http://103.252.73.254:${service.port}`, { 
                         mode: 'no-cors' 
                     });
                     console.log(`✅ ${service.name} service is healthy`);
