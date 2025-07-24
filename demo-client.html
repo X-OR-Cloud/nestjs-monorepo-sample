@@ -24,6 +24,18 @@
         <div class="section">
             <h2>Authentication (IAM Service - Port 3001)</h2>
             <div>
+                <h3>Server Configuration</h3>
+                <select id="serverSelect" onchange="updateServerUrl()">
+                    <option value="http://103.252.73.254">Production Server (103.252.73.254)</option>
+                    <option value="http://localhost">Local Development (localhost)</option>
+                </select>
+                <span id="currentServer">Current: http://103.252.73.254</span>
+            </div>
+            <div>
+                <h3>Test Connection</h3>
+                <button onclick="testConnection()">Test Server Connection</button>
+            </div>
+            <div>
                 <h3>Register</h3>
                 <input type="text" id="regUsername" placeholder="Username" value="testuser">
                 <input type="password" id="regPassword" placeholder="Password" value="password123">
@@ -84,6 +96,13 @@
     <script>
         let socket = null;
         let currentToken = '';
+        let baseUrl = 'http://103.252.73.254';
+
+        function updateServerUrl() {
+            baseUrl = document.getElementById('serverSelect').value;
+            document.getElementById('currentServer').textContent = `Current: ${baseUrl}`;
+            log(`Server URL changed to: ${baseUrl}`);
+        }
 
         function log(message) {
             const results = document.getElementById('results');
@@ -98,20 +117,77 @@
             notifications.insertBefore(notifDiv, notifications.firstChild);
         }
 
+        async function testConnection() {
+            const services = [
+                { name: 'IAM', port: 3001 },
+                { name: 'BPM', port: 3002 },
+                { name: 'LGM', port: 3003 },
+                { name: 'NSM', port: 3004 }
+            ];
+
+            log('Testing server connectivity...');
+
+            for (const service of services) {
+                try {
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
+                    
+                    const response = await fetch(`${baseUrl}:${service.port}`, {
+                        method: 'GET',
+                        mode: 'cors',
+                        signal: controller.signal,
+                        headers: {
+                            'Accept': 'application/json',
+                            'Content-Type': 'application/json'
+                        }
+                    });
+                    
+                    clearTimeout(timeoutId);
+                    log(`✅ ${service.name} Service (${service.port}): ${response.status} ${response.statusText}`);
+                } catch (error) {
+                    if (error.name === 'AbortError') {
+                        log(`⏰ ${service.name} Service (${service.port}): Timeout after 10s`);
+                    } else {
+                        log(`❌ ${service.name} Service (${service.port}): ${error.message}`);
+                    }
+                }
+            }
+            
+            // Test specific endpoints
+            log('Testing specific endpoints...');
+            try {
+                const response = await fetch(`${baseUrl}:3001/api/docs`, {
+                    method: 'GET',
+                    mode: 'cors'
+                });
+                log(`📚 Swagger docs: ${response.status} ${response.statusText}`);
+            } catch (error) {
+                log(`❌ Swagger docs: ${error.message}`);
+            }
+        }
+
         async function register() {
             const username = document.getElementById('regUsername').value;
             const password = document.getElementById('regPassword').value;
             
+            log('Attempting to register user: ' + username);
+            
             try {
-                const response = await fetch('http://103.252.73.254:3001/auth/register', {
+                const response = await fetch(`${baseUrl}:3001/auth/register`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ username, password })
                 });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
                 const result = await response.json();
                 log('Register: ' + JSON.stringify(result, null, 2));
             } catch (error) {
                 log('Register Error: ' + error.message);
+                log(`Please check if the IAM service is running on ${baseUrl}:3001`);
             }
         }
 
@@ -120,7 +196,7 @@
             const password = document.getElementById('loginPassword').value;
             
             try {
-                const response = await fetch('http://103.252.73.254:3001/auth/login', {
+                const response = await fetch(`${baseUrl}:3001/auth/login`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ username, password })
@@ -145,7 +221,7 @@
             }
             
             try {
-                const response = await fetch('http://103.252.73.254:3002/accounts', {
+                const response = await fetch(`${baseUrl}:3002/accounts`, {
                     headers: { 'Authorization': 'Bearer ' + currentToken }
                 });
                 const result = await response.json();
@@ -162,7 +238,7 @@
             }
             
             try {
-                const response = await fetch('http://103.252.73.254:3002/transactions', {
+                const response = await fetch(`${baseUrl}:3002/transactions`, {
                     headers: { 'Authorization': 'Bearer ' + currentToken }
                 });
                 const result = await response.json();
@@ -183,7 +259,7 @@
             const description = document.getElementById('description').value;
             
             try {
-                const response = await fetch('http://103.252.73.254:3002/transactions', {
+                const response = await fetch(`${baseUrl}:3002/transactions`, {
                     method: 'POST',
                     headers: { 
                         'Content-Type': 'application/json',
@@ -205,7 +281,7 @@
             }
             
             try {
-                const response = await fetch('http://103.252.73.254:3003/logs', {
+                const response = await fetch(`${baseUrl}:3003/logs`, {
                     headers: { 'Authorization': 'Bearer ' + currentToken }
                 });
                 const result = await response.json();
