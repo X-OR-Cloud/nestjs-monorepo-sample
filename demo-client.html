@@ -180,14 +180,25 @@
                 });
                 
                 if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    // Try to get error details from response
+                    let errorDetails = `HTTP ${response.status}: ${response.statusText}`;
+                    try {
+                        const errorBody = await response.json();
+                        errorDetails += '\nServer Error: ' + JSON.stringify(errorBody, null, 2);
+                    } catch (e) {
+                        // If can't parse JSON, just show status
+                    }
+                    throw new Error(errorDetails);
                 }
                 
                 const result = await response.json();
-                log('Register: ' + JSON.stringify(result, null, 2));
+                log('✅ Register Success: ' + JSON.stringify(result, null, 2));
             } catch (error) {
-                log('Register Error: ' + error.message);
-                log(`Please check if the IAM service is running on ${baseUrl}:3001`);
+                log('❌ Register Error: ' + error.message);
+                log(`💡 Common fixes:
+- Check MongoDB connection on server
+- Verify .env files exist in apps/iam/
+- Check PM2 logs: pm2 logs iam-service`);
             }
         }
 
