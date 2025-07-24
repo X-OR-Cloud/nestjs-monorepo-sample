@@ -7,89 +7,125 @@
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
     <style>
         body { font-family: Arial, sans-serif; margin: 20px; }
-        .container { max-width: 800px; margin: 0 auto; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .main-layout { display: flex; gap: 20px; }
+        .sections-column { flex: 2; }
+        .logs-column { flex: 1; }
         .section { margin: 20px 0; padding: 20px; border: 1px solid #ddd; border-radius: 5px; }
+        .section-result { background: #f8f9fa; padding: 10px; margin: 10px 0; border-radius: 3px; white-space: pre-wrap; font-size: 12px; max-height: 150px; overflow-y: auto; }
         button { margin: 5px; padding: 10px 15px; background: #007bff; color: white; border: none; border-radius: 3px; cursor: pointer; }
         button:hover { background: #0056b3; }
         input, textarea { width: 100%; padding: 8px; margin: 5px 0; border: 1px solid #ddd; border-radius: 3px; }
         .result { background: #f8f9fa; padding: 10px; margin: 10px 0; border-radius: 3px; white-space: pre-wrap; }
         .notification { background: #d4edda; border: 1px solid #c3e6cb; color: #155724; padding: 10px; margin: 5px 0; border-radius: 3px; }
+        .logs-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+        .logs-table th, .logs-table td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        .logs-table th { background-color: #f2f2f2; }
+        .logs-table tbody { display: block; max-height: 600px; overflow-y: auto; }
+        .logs-table thead, .logs-table tbody tr { display: table; width: 100%; table-layout: fixed; }
+        .success { color: #28a745; }
+        .error { color: #dc3545; }
+        .info { color: #17a2b8; }
+        .warning { color: #ffc107; }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>NestJS Monorepo Demo Client</h1>
         
-        <!-- Authentication Section -->
-        <div class="section">
-            <h2>Authentication (IAM Service - Port 3001)</h2>
-            <div>
-                <h3>Server Configuration</h3>
-                <select id="serverSelect" onchange="updateServerUrl()">
-                    <option value="http://103.252.73.254">Production Server (103.252.73.254)</option>
-                    <option value="http://localhost">Local Development (localhost)</option>
-                </select>
-                <span id="currentServer">Current: http://103.252.73.254</span>
-            </div>
-            <div>
-                <h3>Test Connection</h3>
-                <button onclick="testConnection()">Test Server Connection</button>
-            </div>
-            <div>
-                <h3>Register</h3>
-                <input type="text" id="regUsername" placeholder="Username" value="testuser">
-                <input type="password" id="regPassword" placeholder="Password" value="password123">
-                <button onclick="register()">Register</button>
-            </div>
-            <div>
-                <h3>Login</h3>
-                <input type="text" id="loginUsername" placeholder="Username" value="testuser">
-                <input type="password" id="loginPassword" placeholder="Password" value="password123">
-                <button onclick="login()">Login</button>
-            </div>
-            <div>
-                <strong>JWT Token:</strong>
-                <input type="text" id="jwtToken" placeholder="JWT Token will appear here" readonly>
-            </div>
-        </div>
+        <div class="main-layout">
+            <!-- Left Column: Service Sections -->
+            <div class="sections-column">
+                <!-- Authentication Section -->
+                <div class="section">
+                    <h2>Authentication (IAM Service - Port 3001)</h2>
+                    <div>
+                        <h3>Server Configuration</h3>
+                        <select id="serverSelect" onchange="updateServerUrl()">
+                            <option value="http://103.252.73.254">Production Server (103.252.73.254)</option>
+                            <option value="http://localhost">Local Development (localhost)</option>
+                        </select>
+                        <span id="currentServer">Current: http://103.252.73.254</span>
+                    </div>
+                    <div>
+                        <h3>Test Connection</h3>
+                        <button onclick="testConnection()">Test Server Connection</button>
+                    </div>
+                    <div>
+                        <h3>Register</h3>
+                        <input type="text" id="regUsername" placeholder="Username" value="testuser">
+                        <input type="password" id="regPassword" placeholder="Password" value="password123">
+                        <button onclick="register()">Register</button>
+                    </div>
+                    <div>
+                        <h3>Login</h3>
+                        <input type="text" id="loginUsername" placeholder="Username" value="testuser">
+                        <input type="password" id="loginPassword" placeholder="Password" value="password123">
+                        <button onclick="login()">Login</button>
+                    </div>
+                    <div>
+                        <strong>JWT Token:</strong>
+                        <input type="text" id="jwtToken" placeholder="JWT Token will appear here" readonly>
+                    </div>
+                    <div class="section-result" id="auth-result">Authentication results will appear here...</div>
+                </div>
 
-        <!-- BPM Section -->
-        <div class="section">
-            <h2>BPM Service (Port 3002)</h2>
-            <button onclick="getAccounts()">Get Accounts</button>
-            <button onclick="getTransactions()">Get Transactions</button>
-            <div>
-                <h3>Create Transaction</h3>
-                <input type="number" id="amount" placeholder="Amount" value="100" step="0.01" min="0.01">
-                <select id="transactionType">
-                    <option value="income">Income</option>
-                    <option value="expense">Expense</option>
-                </select>
-                <input type="text" id="description" placeholder="Description (optional)" value="Test transaction">
-                <button onclick="createTransaction()">Create Transaction</button>
+                <!-- BPM Section -->
+                <div class="section">
+                    <h2>BPM Service (Port 3002)</h2>
+                    <button onclick="getAccounts()">Get Accounts</button>
+                    <button onclick="getTransactions()">Get Transactions</button>
+                    <div>
+                        <h3>Create Transaction</h3>
+                        <input type="number" id="amount" placeholder="Amount" value="100" step="0.01" min="0.01">
+                        <select id="transactionType">
+                            <option value="income">Income</option>
+                            <option value="expense">Expense</option>
+                        </select>
+                        <input type="text" id="description" placeholder="Description (optional)" value="Test transaction">
+                        <button onclick="createTransaction()">Create Transaction</button>
+                    </div>
+                    <div class="section-result" id="bpm-result">BPM results will appear here...</div>
+                </div>
+
+                <!-- LGM Section -->
+                <div class="section">
+                    <h2>LGM Service (Port 3003)</h2>
+                    <button onclick="getLogs()">Get Logs</button>
+                    <div class="section-result" id="lgm-result">LGM results will appear here...</div>
+                </div>
+
+                <!-- WebSocket Section -->
+                <div class="section">
+                    <h2>WebSocket Notifications (NSM Service - Port 3004)</h2>
+                    <button onclick="connectWebSocket()">Connect WebSocket</button>
+                    <button onclick="disconnectWebSocket()">Disconnect</button>
+                    <button onclick="requestNotifications()">Get Notifications</button>
+                    <div id="wsStatus">Status: Disconnected</div>
+                    <div id="notifications"></div>
+                    <div class="section-result" id="websocket-result">WebSocket results will appear here...</div>
+                </div>
             </div>
-        </div>
 
-        <!-- LGM Section -->
-        <div class="section">
-            <h2>LGM Service (Port 3003)</h2>
-            <button onclick="getLogs()">Get Logs</button>
-        </div>
-
-        <!-- WebSocket Section -->
-        <div class="section">
-            <h2>WebSocket Notifications (NSM Service - Port 3004)</h2>
-            <button onclick="connectWebSocket()">Connect WebSocket</button>
-            <button onclick="disconnectWebSocket()">Disconnect</button>
-            <button onclick="requestNotifications()">Get Notifications</button>
-            <div id="wsStatus">Status: Disconnected</div>
-            <div id="notifications"></div>
-        </div>
-
-        <!-- Results Section -->
-        <div class="section">
-            <h2>Results</h2>
-            <div id="results" class="result">Results will appear here...</div>
+            <!-- Right Column: Activity Log Table -->
+            <div class="logs-column">
+                <div class="section">
+                    <h2>Activity Log</h2>
+                    <button onclick="clearLogs()">Clear Logs</button>
+                    <table class="logs-table">
+                        <thead>
+                            <tr>
+                                <th width="15%">Time</th>
+                                <th width="20%">Service</th>
+                                <th width="20%">Action</th>
+                                <th width="45%">Result</th>
+                            </tr>
+                        </thead>
+                        <tbody id="activity-logs">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -101,12 +137,45 @@
         function updateServerUrl() {
             baseUrl = document.getElementById('serverSelect').value;
             document.getElementById('currentServer').textContent = `Current: ${baseUrl}`;
-            log(`Server URL changed to: ${baseUrl}`);
+            logActivity('System', 'Config', `Server URL changed to: ${baseUrl}`, 'info');
         }
 
-        function log(message) {
-            const results = document.getElementById('results');
-            results.textContent = new Date().toLocaleTimeString() + ': ' + message + '\n' + results.textContent;
+        function logActivity(service, action, result, type = 'info') {
+            const logTable = document.getElementById('activity-logs');
+            const row = logTable.insertRow(0); // Insert at top
+            
+            const timeCell = row.insertCell(0);
+            const serviceCell = row.insertCell(1);
+            const actionCell = row.insertCell(2);
+            const resultCell = row.insertCell(3);
+            
+            timeCell.textContent = new Date().toLocaleTimeString();
+            serviceCell.textContent = service;
+            actionCell.textContent = action;
+            resultCell.textContent = result;
+            resultCell.className = type;
+            
+            // Limit log entries to 100
+            if (logTable.rows.length > 100) {
+                logTable.deleteRow(100);
+            }
+        }
+
+        function updateSectionResult(sectionId, message, isError = false) {
+            const element = document.getElementById(sectionId);
+            if (element) {
+                element.textContent = new Date().toLocaleTimeString() + ': ' + message + '\n' + element.textContent;
+                if (isError) {
+                    element.style.color = '#dc3545';
+                } else {
+                    element.style.color = '#28a745';
+                }
+            }
+        }
+
+        function clearLogs() {
+            document.getElementById('activity-logs').innerHTML = '';
+            logActivity('System', 'Clear', 'Logs cleared', 'info');
         }
 
         function addNotification(notification) {
@@ -125,7 +194,8 @@
                 { name: 'NSM', port: 3004 }
             ];
 
-            log('Testing server connectivity...');
+            updateSectionResult('auth-result', 'Testing server connectivity...');
+            logActivity('System', 'Test', 'Testing connectivity to all services', 'info');
 
             for (const service of services) {
                 try {
@@ -143,26 +213,31 @@
                     });
                     
                     clearTimeout(timeoutId);
-                    log(`✅ ${service.name} Service (${service.port}): ${response.status} ${response.statusText}`);
+                    const message = `✅ ${service.name} Service (${service.port}): ${response.status} ${response.statusText}`;
+                    updateSectionResult('auth-result', message);
+                    logActivity(service.name, 'Connect', `${response.status} ${response.statusText}`, 'success');
                 } catch (error) {
-                    if (error.name === 'AbortError') {
-                        log(`⏰ ${service.name} Service (${service.port}): Timeout after 10s`);
-                    } else {
-                        log(`❌ ${service.name} Service (${service.port}): ${error.message}`);
-                    }
+                    const message = error.name === 'AbortError' 
+                        ? `⏰ ${service.name} Service (${service.port}): Timeout after 10s`
+                        : `❌ ${service.name} Service (${service.port}): ${error.message}`;
+                    updateSectionResult('auth-result', message, true);
+                    logActivity(service.name, 'Connect', error.message, 'error');
                 }
             }
             
             // Test specific endpoints
-            log('Testing specific endpoints...');
             try {
                 const response = await fetch(`${baseUrl}:3001/api/docs`, {
                     method: 'GET',
                     mode: 'cors'
                 });
-                log(`📚 Swagger docs: ${response.status} ${response.statusText}`);
+                const message = `📚 Swagger docs: ${response.status} ${response.statusText}`;
+                updateSectionResult('auth-result', message);
+                logActivity('IAM', 'Swagger', `${response.status} ${response.statusText}`, 'info');
             } catch (error) {
-                log(`❌ Swagger docs: ${error.message}`);
+                const message = `❌ Swagger docs: ${error.message}`;
+                updateSectionResult('auth-result', message, true);
+                logActivity('IAM', 'Swagger', error.message, 'error');
             }
         }
 
@@ -170,7 +245,8 @@
             const username = document.getElementById('regUsername').value;
             const password = document.getElementById('regPassword').value;
             
-            log('Attempting to register user: ' + username);
+            updateSectionResult('auth-result', 'Attempting to register user: ' + username);
+            logActivity('IAM', 'Register', `User: ${username}`, 'info');
             
             try {
                 const response = await fetch(`${baseUrl}:3001/auth/register`, {
@@ -180,7 +256,6 @@
                 });
                 
                 if (!response.ok) {
-                    // Try to get error details from response
                     let errorDetails = `HTTP ${response.status}: ${response.statusText}`;
                     try {
                         const errorBody = await response.json();
@@ -192,19 +267,23 @@
                 }
                 
                 const result = await response.json();
-                log('✅ Register Success: ' + JSON.stringify(result, null, 2));
+                updateSectionResult('auth-result', '✅ Register Success: ' + JSON.stringify(result, null, 2));
+                logActivity('IAM', 'Register', 'Success', 'success');
             } catch (error) {
-                log('❌ Register Error: ' + error.message);
-                log(`💡 Common fixes:
+                updateSectionResult('auth-result', '❌ Register Error: ' + error.message, true);
+                updateSectionResult('auth-result', `💡 Common fixes:
 - Check MongoDB connection on server
 - Verify .env files exist in apps/iam/
 - Check PM2 logs: pm2 logs iam-service`);
+                logActivity('IAM', 'Register', error.message, 'error');
             }
         }
 
         async function login() {
             const username = document.getElementById('loginUsername').value;
             const password = document.getElementById('loginPassword').value;
+            
+            logActivity('IAM', 'Login', `User: ${username}`, 'info');
             
             try {
                 const response = await fetch(`${baseUrl}:3001/auth/login`, {
@@ -216,58 +295,74 @@
                 if (result.accessToken) {
                     currentToken = result.accessToken;
                     document.getElementById('jwtToken').value = currentToken;
-                    log('Login successful!');
+                    updateSectionResult('auth-result', 'Login successful!');
+                    logActivity('IAM', 'Login', 'Success - Token received', 'success');
                 } else {
-                    log('Login: ' + JSON.stringify(result, null, 2));
+                    updateSectionResult('auth-result', 'Login: ' + JSON.stringify(result, null, 2), true);
+                    logActivity('IAM', 'Login', 'Failed - No token', 'error');
                 }
             } catch (error) {
-                log('Login Error: ' + error.message);
+                updateSectionResult('auth-result', 'Login Error: ' + error.message, true);
+                logActivity('IAM', 'Login', error.message, 'error');
             }
         }
 
         async function getAccounts() {
             if (!currentToken) {
-                log('Please login first!');
+                updateSectionResult('bpm-result', 'Please login first!', true);
+                logActivity('BPM', 'Accounts', 'No token', 'warning');
                 return;
             }
+            
+            logActivity('BPM', 'Accounts', 'Fetching accounts', 'info');
             
             try {
                 const response = await fetch(`${baseUrl}:3002/accounts`, {
                     headers: { 'Authorization': 'Bearer ' + currentToken }
                 });
                 const result = await response.json();
-                log('Accounts: ' + JSON.stringify(result, null, 2));
+                updateSectionResult('bpm-result', 'Accounts: ' + JSON.stringify(result, null, 2));
+                logActivity('BPM', 'Accounts', 'Success', 'success');
             } catch (error) {
-                log('Get Accounts Error: ' + error.message);
+                updateSectionResult('bpm-result', 'Get Accounts Error: ' + error.message, true);
+                logActivity('BPM', 'Accounts', error.message, 'error');
             }
         }
 
         async function getTransactions() {
             if (!currentToken) {
-                log('Please login first!');
+                updateSectionResult('bpm-result', 'Please login first!', true);
+                logActivity('BPM', 'Transactions', 'No token', 'warning');
                 return;
             }
+            
+            logActivity('BPM', 'Transactions', 'Fetching transactions', 'info');
             
             try {
                 const response = await fetch(`${baseUrl}:3002/transactions`, {
                     headers: { 'Authorization': 'Bearer ' + currentToken }
                 });
                 const result = await response.json();
-                log('Transactions: ' + JSON.stringify(result, null, 2));
+                updateSectionResult('bpm-result', 'Transactions: ' + JSON.stringify(result, null, 2));
+                logActivity('BPM', 'Transactions', 'Success', 'success');
             } catch (error) {
-                log('Get Transactions Error: ' + error.message);
+                updateSectionResult('bpm-result', 'Get Transactions Error: ' + error.message, true);
+                logActivity('BPM', 'Transactions', error.message, 'error');
             }
         }
 
         async function createTransaction() {
             if (!currentToken) {
-                log('Please login first!');
+                updateSectionResult('bpm-result', 'Please login first!', true);
+                logActivity('BPM', 'Create', 'No token', 'warning');
                 return;
             }
             
             const amount = parseFloat(document.getElementById('amount').value);
             const type = document.getElementById('transactionType').value;
             const description = document.getElementById('description').value;
+            
+            logActivity('BPM', 'Create', `${type} $${amount}`, 'info');
             
             try {
                 const response = await fetch(`${baseUrl}:3002/transactions`, {
@@ -279,32 +374,40 @@
                     body: JSON.stringify({ amount, type, description })
                 });
                 const result = await response.json();
-                log('Create Transaction: ' + JSON.stringify(result, null, 2));
+                updateSectionResult('bpm-result', 'Create Transaction: ' + JSON.stringify(result, null, 2));
+                logActivity('BPM', 'Create', 'Success', 'success');
             } catch (error) {
-                log('Create Transaction Error: ' + error.message);
+                updateSectionResult('bpm-result', 'Create Transaction Error: ' + error.message, true);
+                logActivity('BPM', 'Create', error.message, 'error');
             }
         }
 
         async function getLogs() {
             if (!currentToken) {
-                log('Please login first!');
+                updateSectionResult('lgm-result', 'Please login first!', true);
+                logActivity('LGM', 'Logs', 'No token', 'warning');
                 return;
             }
+            
+            logActivity('LGM', 'Logs', 'Fetching logs', 'info');
             
             try {
                 const response = await fetch(`${baseUrl}:3003/logs`, {
                     headers: { 'Authorization': 'Bearer ' + currentToken }
                 });
                 const result = await response.json();
-                log('Logs: ' + JSON.stringify(result, null, 2));
+                updateSectionResult('lgm-result', 'Logs: ' + JSON.stringify(result, null, 2));
+                logActivity('LGM', 'Logs', 'Success', 'success');
             } catch (error) {
-                log('Get Logs Error: ' + error.message);
+                updateSectionResult('lgm-result', 'Get Logs Error: ' + error.message, true);
+                logActivity('LGM', 'Logs', error.message, 'error');
             }
         }
 
         function connectWebSocket() {
             if (!currentToken) {
-                log('Please login first!');
+                updateSectionResult('websocket-result', 'Please login first!', true);
+                logActivity('NSM', 'Connect', 'No token', 'warning');
                 return;
             }
 
@@ -312,32 +415,39 @@
                 socket.disconnect();
             }
 
+            logActivity('NSM', 'Connect', 'Connecting WebSocket', 'info');
+
             socket = io('http://103.252.73.254:3004', {
                 auth: { token: currentToken }
             });
 
             socket.on('connect', () => {
                 document.getElementById('wsStatus').textContent = 'Status: Connected';
-                log('WebSocket connected');
+                updateSectionResult('websocket-result', 'WebSocket connected');
+                logActivity('NSM', 'Connect', 'Connected', 'success');
             });
 
             socket.on('disconnect', () => {
                 document.getElementById('wsStatus').textContent = 'Status: Disconnected';
-                log('WebSocket disconnected');
+                updateSectionResult('websocket-result', 'WebSocket disconnected', true);
+                logActivity('NSM', 'Disconnect', 'Disconnected', 'warning');
             });
 
             socket.on('notification', (notification) => {
-                log('Received notification: ' + JSON.stringify(notification, null, 2));
+                updateSectionResult('websocket-result', 'Received notification: ' + JSON.stringify(notification, null, 2));
                 addNotification(notification);
+                logActivity('NSM', 'Notification', notification.type, 'info');
             });
 
             socket.on('notifications', (notifications) => {
-                log('All notifications: ' + JSON.stringify(notifications, null, 2));
+                updateSectionResult('websocket-result', 'All notifications: ' + JSON.stringify(notifications, null, 2));
                 notifications.forEach(addNotification);
+                logActivity('NSM', 'Notifications', `${notifications.length} items`, 'info');
             });
 
             socket.on('connect_error', (error) => {
-                log('WebSocket connection error: ' + error.message);
+                updateSectionResult('websocket-result', 'WebSocket connection error: ' + error.message, true);
+                logActivity('NSM', 'Error', error.message, 'error');
             });
         }
 
@@ -346,16 +456,19 @@
                 socket.disconnect();
                 socket = null;
                 document.getElementById('wsStatus').textContent = 'Status: Disconnected';
-                log('WebSocket disconnected manually');
+                updateSectionResult('websocket-result', 'WebSocket disconnected manually');
+                logActivity('NSM', 'Disconnect', 'Manual disconnect', 'info');
             }
         }
 
         function requestNotifications() {
             if (socket && socket.connected) {
                 socket.emit('getNotifications');
-                log('Requested notifications from server');
+                updateSectionResult('websocket-result', 'Requested notifications from server');
+                logActivity('NSM', 'Request', 'Get notifications', 'info');
             } else {
-                log('WebSocket not connected');
+                updateSectionResult('websocket-result', 'WebSocket not connected', true);
+                logActivity('NSM', 'Request', 'Not connected', 'warning');
             }
         }
     </script>
