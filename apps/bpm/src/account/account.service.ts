@@ -7,25 +7,27 @@ import { UserRegisterEvent } from '../../../../libs/shared/src/events';
 export class AccountService {
   private accounts: Account[] = [];
 
-  @OnEvent('user-register')
-  async handleUserRegister(event: UserRegisterEvent) {
-    console.log('Creating account for user:', event.username);
+  async createDefaultAccount(userId: string, username: string): Promise<Account> {
+    console.log('Creating default account for user:', username);
     const account = new Account({
       balance: 0,
       owner: {
-        userId: event.userId,
+        userId: userId,
         orgId: 'default-org',
       },
     });
     
     // Set account-specific attributes
-    account.setAttribute('accountType', 'default');
+    account.setAttribute('accountType', 'savings');
     account.setAttribute('currency', 'USD');
-    account.setMetadata('createdByEvent', 'user-register');
+    account.setAttribute('status', 'active');
+    account.setMetadata('createdByEvent', 'user.registered');
     account.setMetadata('initialBalance', 0);
+    account.setMetadata('username', username);
     
     this.accounts.push(account);
-    console.log('Account created:', account);
+    console.log('Default account created:', account.id);
+    return account;
   }
 
   async findByUserId(userId: string): Promise<Account[]> {

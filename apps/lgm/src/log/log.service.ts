@@ -1,42 +1,50 @@
 import { Injectable } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
 import { Log } from './entities/log.entity';
-import { UserActionEvent } from '../../../../libs/shared/src/events';
+import { UserActionEvent, CrossServiceEvent } from '../../../../libs/shared/src/events';
 
 @Injectable()
 export class LogService {
   private logs: Log[] = [];
 
-  @OnEvent('user-event')
-  async handleUserEvent(event: UserActionEvent) {
-    console.log('Logging user event:', event);
+  async createLog(level: 'info' | 'warn' | 'error', message: string, userId: string, metadata?: any): Promise<Log> {
     const log = new Log({
-      service: event.service,
-      action: event.action,
-      time: event.time,
+      service: 'lgm',
+      action: 'cross-service-event',
+      time: new Date(),
       owner: {
-        userId: event.userId,
+        userId: userId,
         orgId: 'default-org',
       },
     });
     
     // Set log-specific attributes and metadata
-    log.setAttribute('eventType', 'user-action');
-    log.setAttribute('originalEvent', JSON.stringify(event));
+    log.setAttribute('message', message);
+    log.setAttribute('eventType', 'cross-service');
     log.setMetadata('processingTime', new Date());
-    log.setMetadata('logSource', 'event-emitter');
+    log.setMetadata('logSource', 'cross-service-event');
     
-    // Set log level based on action
-    if (event.action.includes('error') || event.action.includes('fail')) {
-      log.setLogLevel('ERROR');
-    } else if (event.action.includes('warn')) {
-      log.setLogLevel('WARN');
-    } else {
-      log.setLogLevel('INFO');
+    if (metadata) {
+      Object.keys(metadata).forEach(key => {
+        log.setMetadata(key, metadata[key]);
+      });
+    }
+    
+    // Set log level
+    switch (level) {
+      case 'error':
+        log.setLogLevel('ERROR');
+        break;
+      case 'warn':
+        log.setLogLevel('WARN');
+        break;
+      default:
+        log.setLogLevel('INFO');
     }
     
     this.logs.push(log);
-    console.log('Log created:', log);
+    console.log(`[LGM] Log created: ${level.toUpperCase()} - ${message}`);
+    return log;
   }
 
   async findAll(): Promise<Log[]> {
@@ -73,6 +81,29 @@ export class LogService {
       log.time <= endDate && 
       !log.isDeleted()
     );
+  }
+
+  async logEvent(event: CrossServiceEvent): Promise<Log> {
+    const log = new Log({
+      service: 'lgm',
+      action: 'event-processing',
+      time: new Date(),
+      owner: {
+        userId: event.data.userId || 'system',
+        orgId: 'default-org',
+      },
+    });
+    
+    log.setAttribute('eventType', event.eventType);
+    log.setAttribute('source', event.source);
+    log.setAttribute('correlationId', event.correlationId);
+    log.setMetadata('originalEvent', event);
+    log.setMetadata('processingTime', new Date());
+    log.setLogLevel('INFO');
+    
+    this.logs.push(log);
+    console.log(`[LGM] Event logged: ${event.eventType} from ${event.source}`);
+    return log;
   }
 
   async createManualLog(userId: string, service: string, action: string, level: 'DEBUG' | 'INFO' | 'WARN' | 'ERROR' = 'INFO', context?: any): Promise<Log> {

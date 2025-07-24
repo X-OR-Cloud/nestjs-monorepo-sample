@@ -38,7 +38,7 @@ export class Notification extends BaseEntity {
     this.setMetadata('priority', priority);
   }
 
-  getPriority(): string {
+  getPriority(): 'low' | 'normal' | 'high' | 'urgent' {
     return this.getMetadata('priority') || 'normal';
   }
 

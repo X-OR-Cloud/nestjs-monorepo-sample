@@ -137,6 +137,21 @@ export class NotificationService {
     return notification;
   }
 
+  async createWelcomeNotification(userId: string, username: string, email: string): Promise<Notification> {
+    const message = `Welcome ${username}! Your account has been successfully created. You can now start using our services.`;
+    return this.createNotification(userId, message, 'welcome', 'normal');
+  }
+
+  async createAccountNotification(userId: string, accountId: string, accountType: string): Promise<Notification> {
+    const message = `Your ${accountType} account (${accountId}) has been created successfully and is ready for use.`;
+    return this.createNotification(userId, message, 'account', 'normal');
+  }
+
+  async createTransactionNotification(userId: string, transactionId: string, amount: number, type: 'expense' | 'income'): Promise<Notification> {
+    const message = `Transaction ${transactionId}: ${type === 'income' ? 'Received' : 'Paid'} $${amount.toFixed(2)}`;
+    return this.createNotification(userId, message, 'transaction', 'normal');
+  }
+
   async getNotificationStats(userId: string): Promise<{
     total: number;
     unread: number;

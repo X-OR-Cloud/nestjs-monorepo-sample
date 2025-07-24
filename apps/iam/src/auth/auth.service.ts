@@ -5,7 +5,8 @@ import { UserService } from '../user/user.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { LoginResponse } from './interfaces/login-response.interface';
-import { UserRegisterEvent, UserActionEvent } from '../../../../libs/shared/src/events';
+import { UserRegisterEvent, UserActionEvent, UserRegisteredEvent } from '../../../../libs/shared/src/events';
+import { QueueService } from '../../../../libs/shared/src/queue';
 
 @Injectable()
 export class AuthService {
@@ -13,6 +14,7 @@ export class AuthService {
     private userService: UserService,
     private jwtService: JwtService,
     private eventEmitter: EventEmitter2,
+    private queueService: QueueService,
   ) {}
 
   async register(registerDto: RegisterDto): Promise<{ message: string }> {
@@ -23,7 +25,7 @@ export class AuthService {
 
     const user = await this.userService.create(registerDto.username, registerDto.password);
     
-    // Emit events
+    // Emit local events
     const userRegisterEvent: UserRegisterEvent = {
       userId: user.id,
       username: user.username,
@@ -38,6 +40,21 @@ export class AuthService {
 
     this.eventEmitter.emit('user-register', userRegisterEvent);
     this.eventEmitter.emit('user-event', userActionEvent);
+
+    // Send cross-service event to Redis queue
+    const crossServiceEvent: UserRegisteredEvent = {
+      eventType: 'user.registered',
+      source: 'iam',
+      data: {
+        userId: user.id,
+        username: user.username,
+        email: `${user.username}@example.com`,
+        orgId: user.owner?.orgId || 'default-org',
+      },
+      timestamp: new Date(),
+    };
+    
+    await this.queueService.emitEvent(crossServiceEvent);
 
     return { message: 'User registered successfully' };
   }
